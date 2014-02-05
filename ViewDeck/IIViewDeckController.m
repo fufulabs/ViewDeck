@@ -3275,6 +3275,9 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
 }
 
 - (void)applyCenterViewCornerRadiusAnimated:(BOOL)animated {
+    if (self.centerViewCornerRadius == 0.f)
+        return;
+
     UIBezierPath* path = [self generateCenterViewCornerRadiusPath];
 
     if (!self.slidingControllerView.layer.mask) {
