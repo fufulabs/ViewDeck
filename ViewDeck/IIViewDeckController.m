@@ -434,7 +434,8 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
 - (void)appWillChangeStatusBarFrame:(NSNotification *)notification {
     CGRect nextFrame = [notification.userInfo[UIApplicationStatusBarFrameUserInfoKey] CGRectValue];
     CGFloat offset = nextFrame.size.height == 40.f ? -20.f : 20.f;
-    [self applyCenterViewCornerRadiusAnimated:YES slidingControllerViewHeightOffset:offset];
+    [self applyCenterViewCornerRadiusAnimated:YES slidingControllerViewHeightOffset:offset
+                            animationDuration:offset == 20.f ? 0.2f : 0.6f];
 }
 
 - (void)cleanup {
@@ -3284,11 +3285,12 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
 }
 
 - (void)applyCenterViewCornerRadiusAnimated:(BOOL)animated {
-  [self applyCenterViewCornerRadiusAnimated:animated slidingControllerViewHeightOffset:0.f];
+    [self applyCenterViewCornerRadiusAnimated:animated slidingControllerViewHeightOffset:0.f animationDuration:0.3f];
 }
 
 - (void)applyCenterViewCornerRadiusAnimated:(BOOL)animated
-          slidingControllerViewHeightOffset:(CGFloat)slidingControllerViewHeightOffset {
+          slidingControllerViewHeightOffset:(CGFloat)slidingControllerViewHeightOffset
+                          animationDuration:(CGFloat)animationDuration {
     UIBezierPath* path = [self generateCenterViewCornerRadiusPath:slidingControllerViewHeightOffset];
 
     if (!self.slidingControllerView.layer.mask) {
@@ -3298,7 +3300,7 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
 
     CAShapeLayer* mask = (CAShapeLayer*)self.slidingControllerView.layer.mask;
     if (animated) {
-        CGFloat duration = 0.3;
+        CGFloat duration = animationDuration;
         CAMediaTimingFunction* timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
         [self currentAnimationDuration:&duration timingFunction:&timingFunction];
 
