@@ -12,7 +12,7 @@
 //  so, subject to the following conditions:
 // 
 //  The above copyright notice and this permission notice shall be included in all
-//  copies or substantial portions of the Software.
+//  copies or substantial portions of tche Software.
 //
 //  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 //  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -455,11 +455,8 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
     [self cleanup];
 
     self.centerController.viewDeckController = nil;
-    self.centerController = nil;
     self.leftController.viewDeckController = nil;
-    self.leftController = nil;
     self.rightController.viewDeckController = nil;
-    self.rightController = nil;
     self.panners = nil;
 
 #if !II_ARC_ENABLED
@@ -908,32 +905,35 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
 
     [self.view addObserver:self forKeyPath:@"bounds" options:NSKeyValueObservingOptionNew context:nil];
 
+    __weak typeof(self) wSelf = self;
     if (!_viewFirstAppeared) {
         _viewFirstAppeared = YES;
 
+        CGFloat offset = _offset;
+        IIViewDeckOffsetOrientation offsetOrientation = _offsetOrientation;
         void(^applyViews)(void) = ^{
-            [self.centerController.view removeFromSuperview];
-            [self.centerView addSubview:self.centerController.view];
+            [wSelf.centerController.view removeFromSuperview];
+            [wSelf.centerView addSubview:wSelf.centerController.view];
 
-            [self doForControllers:^(UIViewController* controller, IIViewDeckSide side) {
+            [wSelf doForControllers:^(UIViewController* controller, IIViewDeckSide side) {
                 [controller.view removeFromSuperview];
-                [self.referenceView insertSubview:controller.view belowSubview:self.slidingControllerView];
+                [wSelf.referenceView insertSubview:controller.view belowSubview:wSelf.slidingControllerView];
             }];
 
-            [self setSlidingFrameForOffset:_offset forOrientation:_offsetOrientation animated:YES];
-            self.slidingControllerView.hidden = NO;
+            [wSelf setSlidingFrameForOffset:offset forOrientation:offsetOrientation animated:YES];
+            wSelf.slidingControllerView.hidden = NO;
 
-            self.centerView.frame = self.centerViewBounds;
-            self.centerController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            self.centerController.view.frame = self.centerView.bounds;
-            [self doForControllers:^(UIViewController* controller, IIViewDeckSide side) {
-                controller.view.frame = self.sideViewBounds;
+            wSelf.centerView.frame = wSelf.centerViewBounds;
+            wSelf.centerController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            wSelf.centerController.view.frame = wSelf.centerView.bounds;
+            [wSelf doForControllers:^(UIViewController* controller, IIViewDeckSide side) {
+                controller.view.frame = wSelf.sideViewBounds;
                 controller.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             }];
 
-            [self applyCenterViewCornerRadiusAnimated:NO];
-            [self applyShadowToSlidingViewAnimated:NO];
-            [self applyCenterViewOpacityIfNeeded];
+            [wSelf applyCenterViewCornerRadiusAnimated:NO];
+            [wSelf applyShadowToSlidingViewAnimated:NO];
+            [wSelf applyCenterViewOpacityIfNeeded];
         };
 
         if ([self setSlidingAndReferenceViews]) {
@@ -944,8 +944,8 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
         // after 0.01 sec, since in certain cases the sliding view is reset.
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.001 * NSEC_PER_SEC), dispatch_get_main_queue(), ^(void){
             if (applyViews) applyViews();
-            [self setSlidingFrameForOffset:_offset forOrientation:_offsetOrientation animated:YES];
-            [self hideAppropriateSideViews];
+            [wSelf setSlidingFrameForOffset:offset forOrientation:offsetOrientation animated:YES];
+            [wSelf hideAppropriateSideViews];
         });
 
         [self setNeedsAddPanners];
@@ -965,9 +965,10 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
     [self transitionAppearanceFrom:0 to:1 animated:animated];
 
     if (self.navigationControllerBehavior == IIViewDeckNavigationControllerIntegrated) {
+        CGPoint willAppearOffset = _willAppearOffset;
         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC));
         dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-            self.slidingControllerView.frame = (CGRect) { _willAppearOffset, self.slidingControllerView.frame.size };
+            wSelf.slidingControllerView.frame = (CGRect) { willAppearOffset, wSelf.slidingControllerView.frame.size };
         });
     }
 
@@ -2905,22 +2906,23 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
     void(^afterBlock)(UIViewController* controller) = ^(UIViewController* controller){};
 
     __block CGRect newFrame = self.referenceBounds;
+    __weak typeof(self) wSelf = self;
     if (_viewFirstAppeared) {
         beforeBlock = ^{
-            [self notifyAppearanceForSide:side animated:NO from:2 to:1];
-            [[self controllerForSide:side].view removeFromSuperview];
-            [self notifyAppearanceForSide:side animated:NO from:1 to:0];
+            [wSelf notifyAppearanceForSide:side animated:NO from:2 to:1];
+            [[wSelf controllerForSide:side].view removeFromSuperview];
+            [wSelf notifyAppearanceForSide:side animated:NO from:1 to:0];
         };
         afterBlock = ^(UIViewController* controller) {
-            [self notifyAppearanceForSide:side animated:NO from:0 to:1];
-            [self hideAppropriateSideViews];
+            [wSelf notifyAppearanceForSide:side animated:NO from:0 to:1];
+            [wSelf hideAppropriateSideViews];
             controller.view.frame = newFrame;
             controller.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            if (self.slidingController)
-                [self.referenceView insertSubview:controller.view belowSubview:self.slidingControllerView];
+            if (wSelf.slidingController)
+                [wSelf.referenceView insertSubview:controller.view belowSubview:wSelf.slidingControllerView];
             else
-                [self.referenceView addSubview:controller.view];
-            [self notifyAppearanceForSide:side animated:NO from:1 to:2];
+                [wSelf.referenceView addSubview:controller.view];
+            [wSelf notifyAppearanceForSide:side animated:NO from:1 to:2];
         };
     }
 
@@ -2946,16 +2948,16 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
     if (controller) {
         // and finish the transition
         void(^finishTransition)(void) = ^{
-            UIViewController* parentController = [[self parentViewController] parentViewController] ?: [self presentingViewController] ?: self;
+            UIViewController* parentController = [[wSelf parentViewController] parentViewController] ?: [wSelf presentingViewController] ?: wSelf;
 
             [parentController addChildViewController:controller];
-            [controller setViewDeckController:self];
+            [controller setViewDeckController:wSelf];
             afterBlock(controller);
             [controller didMoveToParentViewController:parentController];
-            [self applyCenterViewOpacityIfNeeded];
+            [wSelf applyCenterViewOpacityIfNeeded];
         };
 
-        [self enqueueFinishTransitionBlock:finishTransition forController:controller];
+        [wSelf enqueueFinishTransitionBlock:finishTransition forController:controller];
     }
 }
 
