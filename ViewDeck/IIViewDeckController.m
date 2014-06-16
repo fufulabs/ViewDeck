@@ -3001,18 +3001,19 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
     void(^afterBlock)(UIViewController* controller) = ^(UIViewController* controller){};
 
     __block CGRect currentFrame = self.referenceBounds;
+    __weak typeof(self) wSelf = self;
     if (_viewFirstAppeared) {
         beforeBlock = ^(UIViewController* controller) {
-            if ([self safe_shouldManageAppearanceMethods]) [controller viewWillDisappear:NO];
-            [self restoreShadowToSlidingView];
-            [self removePanners];
+            if ([wSelf safe_shouldManageAppearanceMethods]) [controller viewWillDisappear:NO];
+            [wSelf restoreShadowToSlidingView];
+            [wSelf removePanners];
             [controller.view removeFromSuperview];
-            if ([self safe_shouldManageAppearanceMethods]) [controller viewDidDisappear:NO];
-            [self.centerView removeFromSuperview];
+            if ([wSelf safe_shouldManageAppearanceMethods]) [controller viewDidDisappear:NO];
+            [wSelf.centerView removeFromSuperview];
         };
         afterBlock = ^(UIViewController* controller) {
-            [self.view addSubview:self.centerView];
-             if ([self safe_shouldManageAppearanceMethods]) [controller viewWillAppear:NO];
+            [wSelf.view addSubview:wSelf.centerView];
+             if ([wSelf safe_shouldManageAppearanceMethods]) [controller viewWillAppear:NO];
             UINavigationController* navController = [centerController isKindOfClass:[UINavigationController class]]
                 ? (UINavigationController*)centerController
                 : nil;
@@ -3022,18 +3023,18 @@ static NSTimeInterval durationToAnimate(CGFloat pointsToAnimate, CGFloat velocit
                 navController.navigationBarHidden = YES;
             }
 
-            [self setSlidingAndReferenceViews];
+            [wSelf setSlidingAndReferenceViews];
             controller.view.frame = currentFrame;
             controller.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             controller.view.hidden = NO;
-            [self.centerView addSubview:controller.view];
+            [wSelf.centerView addSubview:controller.view];
 
             if (barHidden)
                 navController.navigationBarHidden = NO;
 
-            [self addPanners];
-            [self applyShadowToSlidingViewAnimated:NO];
-            if ([self safe_shouldManageAppearanceMethods]) [controller viewDidAppear:NO];
+            [wSelf addPanners];
+            [wSelf applyShadowToSlidingViewAnimated:NO];
+            if ([wSelf safe_shouldManageAppearanceMethods]) [controller viewDidAppear:NO];
         };
     }
 
